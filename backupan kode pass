@@ -1,0 +1,451 @@
+            <!-- Change Password Card -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Change Password</h6>
+                </div>
+                <div class="card-body">
+                    <?php if (isset($password_success)): ?>
+                        <div class="alert alert-success"><?= $password_success ?></div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($password_error)): ?>
+                        <div class="alert alert-danger"><?= $password_error ?></div>
+                    <?php endif; ?>
+                    
+                    <form method="post" action="">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                <small class="form-text text-muted">Minimum 8 characters</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            </div>
+                        </div>
+                        
+                        <div class="password-strength-meter mb-3">
+                            <div class="progress" style="height: 5px;">
+                                <div class="progress-bar bg-danger" role="progressbar" id="password-strength-bar" style="width: 0%"></div>
+                            </div>
+                            <small class="form-text text-muted" id="password-strength-text">Password strength: Too weak</small>
+                        </div>
+                        
+                        <button type="submit" name="change_password" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i> Change Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+
+
+        <!-- backup dashboard.php (buat admin) -->
+        <?php
+require_once '../includes/config.php';
+require_once '../includes/functions.php';
+
+$pageTitle = 'Admin Dashboard';
+$currentPage = 'dashboard';
+
+// Get statistics
+$stats = [
+    'total_users' => 0,
+    'total_vendors' => 0,
+    'total_products' => 0,
+    'total_orders' => 0,
+    'total_sales' => 0,
+    'pending_orders' => 0,
+    'pending_vendors' => 0
+];
+
+// Get total users
+$result = $conn->query("SELECT COUNT(*) as count FROM users");
+$stats['total_users'] = $result->fetch_assoc()['count'];
+
+// Get total vendors
+$result = $conn->query("SELECT COUNT(*) as count FROM vendors");
+$stats['total_vendors'] = $result->fetch_assoc()['count'];
+
+// Get total products
+$result = $conn->query("SELECT COUNT(*) as count FROM products");
+$stats['total_products'] = $result->fetch_assoc()['count'];
+
+// Get total orders
+$result = $conn->query("SELECT COUNT(*) as count FROM orders");
+$stats['total_orders'] = $result->fetch_assoc()['count'];
+
+// Get total sales
+$result = $conn->query("SELECT SUM(total_amount) as total FROM orders WHERE payment_status = 'paid'");
+$stats['total_sales'] = $result->fetch_assoc()['total'] ?: 0;
+
+// Get pending orders
+$result = $conn->query("SELECT COUNT(*) as count FROM orders WHERE status = 'pending'");
+$stats['pending_orders'] = $result->fetch_assoc()['count'];
+
+// Get pending vendors
+$result = $conn->query("SELECT COUNT(*) as count FROM vendors WHERE status = 'pending'");
+$stats['pending_vendors'] = $result->fetch_assoc()['count'];
+
+// Get recent orders
+$recent_orders = [];
+$result = $conn->query("
+    SELECT o.*, u.username, u.full_name 
+    FROM orders o 
+    JOIN users u ON o.user_id = u.id 
+    ORDER BY o.created_at DESC 
+    LIMIT 5
+");
+while ($row = $result->fetch_assoc()) {
+    $recent_orders[] = $row;
+}
+
+// Get recent users
+$recent_users = [];
+$result = $conn->query("
+    SELECT * FROM users 
+    ORDER BY created_at DESC 
+    LIMIT 5
+");
+while ($row = $result->fetch_assoc()) {
+    $recent_users[] = $row;
+}
+
+include '../includes/admin-header.php';
+?>
+
+<div class="admin-content-header">
+    <h1 class="h3 mb-0">Dashboard</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="<?= ADMIN_URL ?>/dashboard.php">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Overview</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Dashboard Stats -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-dashboard card-stat card-primary h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-8">
+                        <div class="stat-title">TOTAL SALES</div>
+                        <div class="stat-value"><?= formatPrice($stats['total_sales']) ?></div>
+                    </div>
+                    <div class="col-4 text-end">
+                        <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-dashboard card-stat card-success h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-8">
+                        <div class="stat-title">TOTAL ORDERS</div>
+                        <div class="stat-value"><?= $stats['total_orders'] ?></div>
+                    </div>
+                    <div class="col-4 text-end">
+                        <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-dashboard card-stat card-info h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-8">
+                        <div class="stat-title">TOTAL PRODUCTS</div>
+                        <div class="stat-value"><?= $stats['total_products'] ?></div>
+                    </div>
+                    <div class="col-4 text-end">
+                        <div class="stat-icon"><i class="fas fa-box"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-dashboard card-stat card-warning h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-8">
+                        <div class="stat-title">TOTAL USERS</div>
+                        <div class="stat-value"><?= $stats['total_users'] ?></div>
+                    </div>
+                    <div class="col-4 text-end">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Orders -->
+    <div class="col-lg-8 mb-4">
+        <div class="card card-dashboard h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">Recent Orders</h5>
+                <a href="<?= ADMIN_URL ?>/orders.php" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($recent_orders) > 0): ?>
+                                <?php foreach ($recent_orders as $order): ?>
+                                    <tr>
+                                        <td><?= $order['order_number'] ?></td>
+                                        <td><?= $order['full_name'] ?></td>
+                                        <td>
+                                            <span class="badge bg-<?= getStatusBadgeClass($order['status']) ?>">
+                                                <?= ucfirst($order['status']) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= formatPrice($order['total_amount']) ?></td>
+                                        <td><?= date('d M Y', strtotime($order['created_at'])) ?></td>
+                                        <td>
+                                             <a href="forbidden.php" class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6" class="text-center">No orders found</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="col-lg-4 mb-4">
+        <div class="card card-dashboard h-100">
+            <div class="card-header">
+                <h5 class="card-title">System Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="status-item d-flex justify-content-between align-items-center mb-3">
+                    <div class="status-label">Pending Orders</div>
+                    <div class="status-value">
+                        <span class="badge bg-warning"><?= $stats['pending_orders'] ?></span>
+                    </div>
+                </div>
+                <div class="status-item d-flex justify-content-between align-items-center mb-3">
+                    <div class="status-label">Pending Vendors</div>
+                    <div class="status-value">
+                        <span class="badge bg-warning"><?= $stats['pending_vendors'] ?></span>
+                    </div>
+                </div>
+                <div class="status-item d-flex justify-content-between align-items-center mb-3">
+                    <div class="status-label">Total Vendors</div>
+                    <div class="status-value">
+                        <span class="badge bg-info"><?= $stats['total_vendors'] ?></span>
+                    </div>
+                </div>
+                <div class="status-item d-flex justify-content-between align-items-center">
+                    <div class="status-label">Server Status</div>
+                    <div class="status-value">
+                        <span class="badge bg-success">Operational</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="card card-dashboard h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">Recent Users</h5>
+                <a href="<?= ADMIN_URL ?>/users.php" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($recent_users) > 0): ?>
+                                <?php foreach ($recent_users as $user): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="<?= SITE_URL ?>/assets/img/<?= $user['profile_image'] ?: DEFAULT_IMG ?>" alt="<?= $user['username'] ?>" class="user-avatar me-2">
+                                                <div>
+                                                    <div class="fw-bold"><?= $user['full_name'] ?></div>
+                                                    <div class="small text-muted"><?= $user['email'] ?></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-<?= getRoleBadgeClass($user['role']) ?>">
+                                                <?= ucfirst($user['role']) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-<?= $user['status'] === 'active' ? 'success' : 'danger' ?>">
+                                                <?= ucfirst($user['status']) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= date('d M Y', strtotime($user['created_at'])) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="4" class="text-center">No users found</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card card-dashboard h-100">
+            <div class="card-header">
+                <h5 class="card-title">Sales Overview</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to get status badge class
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case 'pending': return 'warning';
+            case 'processing': return 'info';
+            case 'shipped': return 'primary';
+            case 'delivered': return 'success';
+            case 'cancelled': return 'danger';
+            default: return 'secondary';
+        }
+    }
+    
+    // Function to get role badge class
+    function getRoleBadgeClass(role) {
+        switch (role) {
+            case 'admin': return 'danger';
+            case 'vendor': return 'primary';
+            case 'customer': return 'success';
+            default: return 'secondary';
+        }
+    }
+    
+    // Sales Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Sales (IDR)',
+                data: [1500000, 2500000, 1800000, 3000000, 2700000, 2200000, 3500000, 3800000, 4200000, 3900000, 4500000, 5000000],
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<?php
+// Functions used in this page
+function getStatusBadgeClass($status) {
+    switch ($status) {
+        case 'pending': return 'warning';
+        case 'processing': return 'info';
+        case 'shipped': return 'primary';
+        case 'delivered': return 'success';
+        case 'cancelled': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function getRoleBadgeClass($role) {
+    switch ($role) {
+        case 'admin': return 'danger';
+        case 'vendor': return 'primary';
+        case 'customer': return 'success';
+        default: return 'secondary';
+    }
+}
+?>
+
+<?php include '../includes/admin-footer.php'; ?>
+
+            //https://github.com/copilot/c/92bbd559-5b27-4597-86dc-2dc827c5f39e
+            //<?= ADMIN_URL ?> /order-details.php?id=<?= $order['id'] ?>"
