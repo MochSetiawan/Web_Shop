@@ -1,0 +1,114 @@
+.chat-floating-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background-color: #4e73df;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s;
+}
+
+.chat-floating-button:hover {
+    transform: scale(1.1);
+    background-color: #2e59d9;
+}
+
+.chat-floating-button i {
+    font-size: 24px;
+}
+
+.chat-notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #e74a3b;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Chat menu */
+.chat-menu {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 250px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    overflow: hidden;
+    display: none;
+}
+
+.chat-menu.show {
+    display: block;
+}
+
+.chat-menu-header {
+    background-color: #4e73df;
+    color: white;
+    padding: 12px 15px;
+    font-weight: bold;
+}
+
+.chat-menu-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.chat-menu-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chat-menu-item:hover {
+    background-color: #f8f9fc;
+}
+
+.chat-menu-item .name {
+    font-weight: bold;
+}
+
+.chat-menu-item .badge {
+    background-color: #4e73df;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+}
+
+.chat-menu-footer {
+    padding: 10px 15px;
+    background-color: #f8f9fc;
+    text-align: center;
+}
+
+.chat-menu-footer a {
+    color: #4e73df;
+    font-size: 13px;
+    text-decoration: none;
+}
